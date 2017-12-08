@@ -1,6 +1,8 @@
 [![Build Status](https://travis-ci.org/PX4/jMAVSim.svg?branch=master)](https://travis-ci.org/PX4/jMAVSim)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/DrTon/jMAVSim?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+   Thank the origin authors for such a good platform for simulating!
+
 12.9
     Now the swarm branch can work well I thought, further test is needed though.
     'Cause when datalink in my Px4 Firmware(v1.6.5-rpi_custom branch) is on, as well as my PC simulating 4 quads, they can bring down its network connection.
