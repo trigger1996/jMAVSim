@@ -1,6 +1,19 @@
 [![Build Status](https://travis-ci.org/PX4/jMAVSim.svg?branch=master)](https://travis-ci.org/PX4/jMAVSim)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/DrTon/jMAVSim?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+12.9
+    Now the swarm branch can work well I thought, further test is needed though.
+    'Cause when datalink in my Px4 Firmware(v1.6.5-rpi_custom branch) is on, as well as my PC simulating 4 quads, they can bring down its network connection.
+    
+    安装的方法我删了一个，下面的就能用了
+    测试的时候我没有关飞机的数据链，然后这样4架飞机就能崩掉我的虚拟机的网络连接，前提是四架飞机都在飞
+    
+    总体应该是能用了，改变里面src/.../Simulator.java的SWARM_NUM可以改变最大的飞机数量，现在是20
+    
+    其实方法很简单，就是把数字改成数组
+    然后飞机的启动脚本必须一架飞机一个，程序可以共用一个，启动脚本里要改变飞机的MAVLink UDP端口以及飞机的MAV_SYS_ID，如果用了我的数据链也得改启动脚本的数据链，这个可以具体看我的Firmware(v1.6.5-rpi_custom branch)里的posix-configs/STIL/init/ekf2/swarm里面的脚本的区别
+
+
 Simple multirotor simulator with MAVLink protocol support
 
 ### Installation ###
@@ -23,21 +36,7 @@ Install prerequisites via HomeBrew:
 brew install ant
 ```
 
-Create a standalone runnable JAR file with all libraries included, copy supporting resources, and use a shorter command to execute:
-
-```
-ant create_run_jar copy_res
-cd out/production
-java -Djava.ext.dirs= -jar jmavsim_run.jar [any jMAVSim options]
-```
-
-To create a complete package ready for distribution, build the `distro` target (this will create `out/production/jMAVSim-distrib.zip`):
-
-```
-ant distro
-```
-
-To delete everything in the build folder `ant clean-all`.
+// Tested, method below can funtion well
 
 #### Alternate build / run / distribute
 
