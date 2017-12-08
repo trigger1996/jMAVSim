@@ -59,7 +59,7 @@ public class Simulator implements Runnable {
     // Seattle downtown: 47.592182, -122.316031, 86m
     // Moscow downtown: 55.753395, 37.625427, 155m
     // Trumansburg: 42.5339037, -76.6452384, 287m
-    public static LatLonAlt DEFAULT_ORIGIN_POS = new LatLonAlt(47.397742, 8.545594, 488);
+    public static LatLonAlt DEFAULT_ORIGIN_POS = new LatLonAlt(24.9360798D, 118.6404492D, 20.0D);   // 改成了华侨大学工学院的坐标 47.397742, 8.545594, 488
 
     // Mag inclination and declination in degrees. If both are left as zero, then DEFAULT_MAG_FIELD is used.
     // If DO_MAG_FIELD_LOOKUP = true or -automag switch is used then both this value and DEFAULT_MAG_FIELD are ignored.
@@ -96,10 +96,10 @@ public class Simulator implements Runnable {
     private static boolean monitorMessage = false;
 
     private Visualizer3D visualizer;
-    private AbstractMulticopter vehicle;
+    private AbstractMulticopter vehicle, vehicle_2;     // 自增加了一个新的飞机
     private CameraGimbal2D gimbal;
     private MAVLinkHILSystem hilSystem;
-    private MAVLinkPort autopilotMavLinkPort;
+    private MAVLinkPort autopilotMavLinkPort, autopilotMavLinkPort_2;
     private UDPMavLinkPort udpGCMavLinkPort;
     private ScheduledFuture<?> thisHandle;
     private World world;
@@ -160,10 +160,20 @@ public class Simulator implements Runnable {
             shutdown = true;
         }
 
+        // 增加一个Mavlink的数据集合
+        MAVLinkSchema schema_2 = null;
+        try {
+            schema_2 = new MAVLinkSchema("mavlink/message_definitions/common.xml");
+        } catch (ParserConfigurationException | IOException | SAXException e) {
+            System.out.println("ERROR: Could not load Mavlink Schema: " + e.getLocalizedMessage());
+            shutdown = true;
+        }
+
         // Create MAVLink connections
         MAVLinkConnection connHIL = new MAVLinkConnection(world);
         world.addObject(connHIL);
         MAVLinkConnection connCommon = new MAVLinkConnection(world);
+        MAVLinkConnection connCommon_2 = new MAVLinkConnection(world);
         // Don't spam ground station with HIL messages
         if (schema != null) {
             connCommon.addSkipMessage(schema.getMessageDefinition("HIL_CONTROLS").id);
@@ -173,12 +183,25 @@ public class Simulator implements Runnable {
         }
         world.addObject(connCommon);
 
+        if (schema_2 != null) {
+            connCommon_2.addSkipMessage(schema_2.getMessageDefinition("HIL_CONTROLS").id);
+            connCommon_2.addSkipMessage(schema_2.getMessageDefinition("HIL_ACTUATOR_CONTROLS").id);
+            connCommon_2.addSkipMessage(schema_2.getMessageDefinition("HIL_SENSOR").id);
+            connCommon_2.addSkipMessage(schema_2.getMessageDefinition("HIL_GPS").id);
+        }
+        world.addObject(connCommon_2);
+
         // Create ports
         if (USE_SERIAL_PORT) {
             //Serial port: connection to autopilot over serial.
             SerialMAVLinkPort port = new SerialMAVLinkPort(schema);
             port.setup(serialPath, serialBaudRate, 8, 1, 0);
             autopilotMavLinkPort = port;
+
+            port = new SerialMAVLinkPort(schema_2);
+            port.setup(serialPath, serialBaudRate, 8, 1, 0);
+            autopilotMavLinkPort_2 = port;
+
         } else {
             UDPMavLinkPort port = new UDPMavLinkPort(schema);
             //port.setDebug(true);
@@ -187,13 +210,23 @@ public class Simulator implements Runnable {
             if (monitorMessage)
                 port.setMonitorMessageID(monitorMessageIds);
             autopilotMavLinkPort = port;
+
+            port = new UDPMavLinkPort(schema_2);
+            port.setup(autopilotIpAddress, autopilotPort + 1); // default source port 0 for autopilot, which is a client of JMAVSim
+            // monitor certain mavlink messages.
+            if (monitorMessage)
+                port.setMonitorMessageID(monitorMessageIds);
+            autopilotMavLinkPort_2 = port;
         }
 
         // allow HIL and GCS to talk to this port
         connHIL.addNode(autopilotMavLinkPort);
+        connHIL.addNode(autopilotMavLinkPort_2);                        // 增加
         connCommon.addNode(autopilotMavLinkPort);
+        connCommon.addNode(autopilotMavLinkPort_2);                     // 增加
         // UDP port: connection to ground station
         udpGCMavLinkPort = new UDPMavLinkPort(schema);
+
         //udpGCMavLinkPort.setDebug(true);
         if (COMMUNICATE_WITH_QGC) {
             udpGCMavLinkPort.setup(qgcIpAddress, qgcPeerPort);
@@ -222,17 +255,24 @@ public class Simulator implements Runnable {
         }
 
         // Create vehicle with sensors
-        if (autopilotType == "aq")
+        if (autopilotType == "aq") {
             vehicle = buildAQ_leora();
-        else
+            vehicle_2 = buildAQ_leora();
+
+        } else {
             vehicle = buildMulticopter();
+            vehicle_2 = buildMulticopter();
+        }
 
         // Create MAVLink HIL system
         // SysId should be the same as autopilot, ComponentId should be different!
         hilSystem = new MAVLinkHILSystem(schema, autopilotSysId, 51, vehicle);
+        hilSystem = new MAVLinkHILSystem(schema_2, autopilotSysId, 52, vehicle_2);        // 自增加
+
         //hilSystem.setHeartbeatInterval(0);
         connHIL.addNode(hilSystem);
         world.addObject(vehicle);
+        world.addObject(vehicle_2);
 
         // Put camera on vehicle with gimbal
         if (USE_GIMBAL) {
@@ -247,6 +287,7 @@ public class Simulator implements Runnable {
         visualizer.addWorldModels();
         visualizer.setHilSystem(hilSystem);
         visualizer.setVehicleViewObject(vehicle);
+        visualizer.setVehicleViewObject(vehicle_2);
 
         // set default view and zoom mode
         visualizer.setViewType(GUI_START_VIEW);
@@ -256,6 +297,7 @@ public class Simulator implements Runnable {
         // Open ports
         try {
             autopilotMavLinkPort.open();
+            autopilotMavLinkPort_2.open();
         }
         catch (IOException e) {
             System.out.println("ERROR: Failed to open MAV port: " + e.getLocalizedMessage());
@@ -284,8 +326,11 @@ public class Simulator implements Runnable {
                         hilSystem.endSim();
 
                     // Close ports
-                    if (autopilotMavLinkPort != null && autopilotMavLinkPort.isOpened())
+                    if (autopilotMavLinkPort != null && autopilotMavLinkPort.isOpened()) {
+
                         autopilotMavLinkPort.close();
+                        autopilotMavLinkPort_2.close();
+                    }
                     if (udpGCMavLinkPort != null && udpGCMavLinkPort.isOpened())
                         udpGCMavLinkPort.close();
 
