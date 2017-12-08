@@ -59,7 +59,6 @@ public class Simulator implements Runnable {
     // Seattle downtown: 47.592182, -122.316031, 86m
     // Moscow downtown: 55.753395, 37.625427, 155m
     // Trumansburg: 42.5339037, -76.6452384, 287m
-    /* 这边修改了坐标，变成了HQU的 */
     public static LatLonAlt DEFAULT_ORIGIN_POS = new LatLonAlt(24.9360798D, 118.6404492D, 20.0D);   // 改成了华侨大学工学院的坐标 47.397742, 8.545594, 488
 
     // Mag inclination and declination in degrees. If both are left as zero, then DEFAULT_MAG_FIELD is used.
@@ -97,16 +96,18 @@ public class Simulator implements Runnable {
     private static boolean monitorMessage = false;
 
     private Visualizer3D visualizer;
-    private AbstractMulticopter vehicle, vehicle_2;                     /* 自增加 */
+    private AbstractMulticopter[] vehicle;               /* 修改 */
     private CameraGimbal2D gimbal;
-    private MAVLinkHILSystem hilSystem, hilSystem_2;                    /* 自增加 */
-    private MAVLinkPort autopilotMavLinkPort, autopilotMavLinkPort_2;   /* 自增加 */
+    private MAVLinkHILSystem[] hilSystem;                /* 修改 */
+    private MAVLinkPort[] autopilotMavLinkPort;          /* 修改 */
     private UDPMavLinkPort udpGCMavLinkPort;
     private ScheduledFuture<?> thisHandle;
     private World world;
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private SystemOutHandler outputHandler;
 //  private int simDelayMax = 500;  // Max delay between simulated and real time to skip samples in simulator, in ms
+
+    private static final int SWARM_NUM = 20;
 
     public volatile boolean shutdown = false;
 
@@ -153,83 +154,78 @@ public class Simulator implements Runnable {
         // add GUI output stream handler for displaying messages
         outputHandler.addOutputStream(visualizer.getOutputStream());
 
-        MAVLinkSchema schema = null;
+        MAVLinkSchema[] schema = new MAVLinkSchema[SWARM_NUM];                      /* 修改 */
         try {
-            schema = new MAVLinkSchema("mavlink/message_definitions/common.xml");
-        } catch (ParserConfigurationException | IOException | SAXException e) {
-            System.out.println("ERROR: Could not load Mavlink Schema: " + e.getLocalizedMessage());
-            shutdown = true;
-        }
 
-        /* 自增加 */
-        MAVLinkSchema schema_2 = null;
-        try {
-            schema_2 = new MAVLinkSchema("mavlink/message_definitions/common.xml");
+            for (int i = 0; i < SWARM_NUM; i++)
+               schema[i] = new MAVLinkSchema("mavlink/message_definitions/common.xml");
+
         } catch (ParserConfigurationException | IOException | SAXException e) {
             System.out.println("ERROR: Could not load Mavlink Schema: " + e.getLocalizedMessage());
             shutdown = true;
         }
 
         // Create MAVLink connections
-        MAVLinkConnection connHIL   = new MAVLinkConnection(world);
-        MAVLinkConnection connHIL_2 = new MAVLinkConnection(world);     /* 自增加 */
-        world.addObject(connHIL);
-        world.addObject(connHIL_2);                                     /* 自增加 */
-        MAVLinkConnection connCommon = new MAVLinkConnection(world);
-        // Don't spam ground station with HIL messages
-        if (schema != null) {
-            connCommon.addSkipMessage(schema.getMessageDefinition("HIL_CONTROLS").id);
-            connCommon.addSkipMessage(schema.getMessageDefinition("HIL_ACTUATOR_CONTROLS").id);
-            connCommon.addSkipMessage(schema.getMessageDefinition("HIL_SENSOR").id);
-            connCommon.addSkipMessage(schema.getMessageDefinition("HIL_GPS").id);
-        }
-        world.addObject(connCommon);
-
-        // Create ports
-        if (USE_SERIAL_PORT) {
-            //Serial port: connection to autopilot over serial.
-            SerialMAVLinkPort port = new SerialMAVLinkPort(schema);
-            port.setup(serialPath, serialBaudRate, 8, 1, 0);
-            autopilotMavLinkPort = port;
-        } else {
-            UDPMavLinkPort port = new UDPMavLinkPort(schema);
-            //port.setDebug(true);
-            port.setup(autopilotIpAddress, autopilotPort); // default source port 0 for autopilot, which is a client of JMAVSim
-            // monitor certain mavlink messages.
-            if (monitorMessage)
-                port.setMonitorMessageID(monitorMessageIds);
-            autopilotMavLinkPort = port;
+        MAVLinkConnection[] connHIL = new MAVLinkConnection[SWARM_NUM];             /* 修改 */
+        for (int i = 0; i < SWARM_NUM; i++) {
+            connHIL[i] = new MAVLinkConnection(world);
+            world.addObject(connHIL[i]);
         }
 
-        /*增加一个飞机的port */
-        if (USE_SERIAL_PORT) {
-            //Serial port: connection to autopilot over serial.
-            SerialMAVLinkPort port = new SerialMAVLinkPort(schema);
-            port.setup(serialPath, serialBaudRate, 8, 1, 0);
-            autopilotMavLinkPort_2 = port;
-        } else {
-            UDPMavLinkPort port = new UDPMavLinkPort(schema);
-            //port.setDebug(true);
-            port.setup(autopilotIpAddress, autopilotPort + 1); // default source port 0 for autopilot, which is a client of JMAVSim
-            // monitor certain mavlink messages.
-            if (monitorMessage)
-                port.setMonitorMessageID(monitorMessageIds);
-            autopilotMavLinkPort_2 = port;
+        MAVLinkConnection[] connCommon = new MAVLinkConnection[SWARM_NUM];
+        for (int i = 0; i < SWARM_NUM; i++) {
+            connCommon[i] = new MAVLinkConnection(world);
+
+            // Don't spam ground station with HIL messages
+            if (schema[i] != null) {
+                connCommon[i].addSkipMessage(schema[i].getMessageDefinition("HIL_CONTROLS").id);
+                connCommon[i].addSkipMessage(schema[i].getMessageDefinition("HIL_ACTUATOR_CONTROLS").id);
+                connCommon[i].addSkipMessage(schema[i].getMessageDefinition("HIL_SENSOR").id);
+                connCommon[i].addSkipMessage(schema[i].getMessageDefinition("HIL_GPS").id);
+            }
+            world.addObject(connCommon[i]);
         }
 
-        // allow HIL and GCS to talk to this port
-        connHIL.addNode(autopilotMavLinkPort);
-        connHIL_2.addNode(autopilotMavLinkPort_2);                       /* 增加 */
-        connCommon.addNode(autopilotMavLinkPort);
+        autopilotMavLinkPort = new MAVLinkPort[SWARM_NUM];
+        for (int i = 0; i < SWARM_NUM; i++) {
+
+            // Create ports
+            if (USE_SERIAL_PORT) {
+
+                //Serial port: connection to autopilot over serial.
+                SerialMAVLinkPort port = new SerialMAVLinkPort(schema[i]);
+                port.setup(serialPath, serialBaudRate, 8, 1, 0);
+                autopilotMavLinkPort[i] = port;
+
+            } else {
+
+                UDPMavLinkPort port = new UDPMavLinkPort(schema[i]);
+                //port.setDebug(true);
+                port.setup(autopilotIpAddress, autopilotPort + i); // default source port 0 for autopilot, which is a client of JMAVSim
+                // monitor certain mavlink messages.
+                if (monitorMessage)
+                    port.setMonitorMessageID(monitorMessageIds);
+                autopilotMavLinkPort[i] = port;
+
+            }
+        }
+
+        for (int i = 0; i < SWARM_NUM; i++) {
+
+            // allow HIL and GCS to talk to this port
+            connHIL[i].addNode(autopilotMavLinkPort[i]);
+            connCommon[i].addNode(autopilotMavLinkPort[i]);
+        }
+
         // UDP port: connection to ground station
-        udpGCMavLinkPort = new UDPMavLinkPort(schema);
+        udpGCMavLinkPort = new UDPMavLinkPort(schema[0]);       /* 注意这边，QGC只有一个口，所以这边只能用[0] */
         //udpGCMavLinkPort.setDebug(true);
         if (COMMUNICATE_WITH_QGC) {
             udpGCMavLinkPort.setup(qgcIpAddress, qgcPeerPort);
             //udpGCMavLinkPort.setDebug(true);
             if (monitorMessage && USE_SERIAL_PORT)
                 udpGCMavLinkPort.setMonitorMessageID(monitorMessageIds);
-            connCommon.addNode(udpGCMavLinkPort);
+            connCommon[0].addNode(udpGCMavLinkPort);            /* 注意这边，理由同上，QGC只有一个口，所以这边只能用[0] */
         }
 
         // Set up magnetic field deviations
@@ -251,30 +247,30 @@ public class Simulator implements Runnable {
         }
 
         // Create vehicle with sensors
-        if (autopilotType == "aq") {
-            vehicle   = buildAQ_leora();
-            vehicle_2 = buildAQ_leora();        /* 增加新飞机 */
+        vehicle = new AbstractMulticopter[SWARM_NUM];
+        for (int i = 0; i < SWARM_NUM; i++) {
+
+            if (autopilotType == "aq")
+                vehicle[i] = buildAQ_leora();
+            else
+                vehicle[i] = buildMulticopter();
+
+            Vector3d pos = vehicle[i].getPosition();
+            pos.x += 2.0f * i;
+            vehicle[i].setPosition(pos);
         }
-        else {
-            vehicle   = buildMulticopter();
-            vehicle_2 = buildMulticopter();     /* 增加新飞机 */
+
+        hilSystem = new MAVLinkHILSystem[SWARM_NUM];
+        for (int i = 0; i < SWARM_NUM; i++) {
+
+            // Create MAVLink HIL system
+            // SysId should be the same as autopilot, ComponentId should be different!
+            hilSystem[i] = new MAVLinkHILSystem(schema[i], autopilotSysId, 51 + i, vehicle[i]); /* autopilotSysId官方说是自适应的，不用改 */
+            //hilSystem.setHeartbeatInterval(0);
+            connHIL[i].addNode(hilSystem[i]);
+            world.addObject(vehicle[i]);
+
         }
-
-        /* 新飞机要移动一下 */
-        Vector3d pos = vehicle_2.getPosition();
-        pos.x += 2.0f;
-        vehicle_2.setPosition(pos);
-
-        // Create MAVLink HIL system
-        // SysId should be the same as autopilot, ComponentId should be different!
-        hilSystem   = new MAVLinkHILSystem(schema,   autopilotSysId, 51, vehicle);
-        hilSystem_2 = new MAVLinkHILSystem(schema_2, autopilotSysId, 52, vehicle_2);      /* 增加新的仿真算法 */
-        //hilSystem.setHeartbeatInterval(0);
-        connHIL.addNode(hilSystem);
-        connHIL_2.addNode(hilSystem_2);                                                              /* 增加新的仿真算法 */
-
-        world.addObject(vehicle);
-        world.addObject(vehicle_2);                                                                  /* 增加新飞机 */
 
         // Put camera on vehicle with gimbal
         if (USE_GIMBAL) {
@@ -287,11 +283,8 @@ public class Simulator implements Runnable {
         world.addObject(new ReportUpdater(world, visualizer));
 
         visualizer.addWorldModels();
-        visualizer.setHilSystem(hilSystem);
-        visualizer.setVehicleViewObject(vehicle);
-        /* 增加的，但是设了不用 */
-        //visualizer.setHilSystem(hilSystem_2);
-        //visualizer.setVehicleViewObject(vehicle_2);
+        visualizer.setHilSystem(hilSystem[0]);                              /* 注意这边的修改 */
+        visualizer.setVehicleViewObject(vehicle[0]);
 
         // set default view and zoom mode
         visualizer.setViewType(GUI_START_VIEW);
@@ -300,16 +293,8 @@ public class Simulator implements Runnable {
 
         // Open ports
         try {
-            autopilotMavLinkPort.open();
-        }
-        catch (IOException e) {
-            System.out.println("ERROR: Failed to open MAV port: " + e.getLocalizedMessage());
-            shutdown = true;
-        }
-
-        /*自增加 */
-        try {
-            autopilotMavLinkPort_2.open();
+            for (int i = 0; i < SWARM_NUM; i++)
+                autopilotMavLinkPort[i].open();
         }
         catch (IOException e) {
             System.out.println("ERROR: Failed to open MAV port: " + e.getLocalizedMessage());
@@ -334,16 +319,16 @@ public class Simulator implements Runnable {
                     Thread.sleep(200);
 
                     System.out.println("Shutting down...");
-                    if (hilSystem != null)
-                        hilSystem.endSim();
+                    for (int i = 0; i < SWARM_NUM; i++) {
+                        if (hilSystem[i] != null)
+                            hilSystem[i].endSim();
+                    }
 
                     // Close ports
-                    if (autopilotMavLinkPort != null && autopilotMavLinkPort.isOpened())
-                        autopilotMavLinkPort.close();
-                    /*自增加 */
-                    if (autopilotMavLinkPort_2 != null && autopilotMavLinkPort_2.isOpened())
-                        autopilotMavLinkPort_2.close();
-
+                    for (int i = 0; i < SWARM_NUM; i++) {
+                        if (autopilotMavLinkPort[i] != null && autopilotMavLinkPort[i].isOpened())
+                            autopilotMavLinkPort[i].close();
+                    }
                     if (udpGCMavLinkPort != null && udpGCMavLinkPort.isOpened())
                         udpGCMavLinkPort.close();
 
@@ -426,7 +411,7 @@ public class Simulator implements Runnable {
 
     private CameraGimbal2D buildGimbal() {
         CameraGimbal2D g = new CameraGimbal2D(world, DEFAULT_GIMBAL_MODEL);
-        g.setBaseObject(vehicle);
+        g.setBaseObject(vehicle[0]);                        /* 注意这边，为了保险只设置一个 */
         g.setPitchChannel(DEFAULT_CAM_PITCH_CHAN);
         g.setPitchScale(DEFAULT_CAM_PITCH_SCAL);
         g.setRollChannel(DEFAULT_CAM_ROLL_CHAN);

@@ -19,11 +19,12 @@
         <entry file="file://$PROJECT_DIR$/src/me/drton/jmavsim/Simulator.java">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="215">
-              <caret line="273" column="101" lean-forward="false" selection-start-line="273" selection-start-column="101" selection-end-line="273" selection-end-column="101" />
+              <caret line="188" column="58" lean-forward="false" selection-start-line="188" selection-start-column="58" selection-end-line="188" selection-end-column="58" />
               <folding>
-                <element signature="e#5214#5223#0" expanded="true" />
-                <element signature="e#15570#16620#0" expanded="true" />
-                <element signature="e#16619#16620#0" expanded="true" />
+                <element signature="imports" expanded="true" />
+                <element signature="e#5188#5197#0" expanded="true" />
+                <element signature="e#14552#15614#0" expanded="true" />
+                <element signature="e#15613#15614#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -32,8 +33,8 @@
       <file leaf-file-name="Simulator.java.backup" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/me/drton/jmavsim/Simulator.java.backup">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="494">
-              <caret line="227" column="50" lean-forward="false" selection-start-line="227" selection-start-column="10" selection-end-line="227" selection-end-column="50" />
+            <state relative-caret-position="504">
+              <caret line="271" column="0" lean-forward="false" selection-start-line="271" selection-start-column="0" selection-end-line="273" selection-end-column="39" />
               <folding />
             </state>
           </provider>
@@ -42,7 +43,7 @@
       <file leaf-file-name="MAVLinkHILSystem.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/me/drton/jmavsim/MAVLinkHILSystem.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="418">
+            <state relative-caret-position="646">
               <caret line="43" column="33" lean-forward="false" selection-start-line="43" selection-start-column="33" selection-end-line="43" selection-end-column="33" />
               <folding />
             </state>
@@ -53,12 +54,10 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>47.39774</find>
       <find>DEFAULT_VEHICLE_MODEL</find>
       <find>monitorMessageIds</find>
       <find>DEFAULT_AUTOPILOT_PORT</find>
       <find>connCommon_2</find>
-      <find>autopilotMavLinkPort</find>
       <find>monitorMessage</find>
       <find>connCommon</find>
       <find>latRef</find>
@@ -79,6 +78,12 @@
       <find>vehicle</find>
       <find>id</find>
       <find>connHIL</find>
+      <find>/*</find>
+      <find>_2</find>
+      <find>schema_arr</find>
+      <find>+ 1</find>
+      <find>world.addObject(connHIL_</find>
+      <find>autopilotMavLinkPort</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -128,7 +133,7 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
+      <pane id="AndroidView" />
       <pane id="PackagesPane">
         <subPane>
           <expand>
@@ -151,8 +156,8 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
       <pane id="Scratches" />
-      <pane id="AndroidView" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -285,8 +290,7 @@
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32939634" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25052193" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="UI Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -298,6 +302,7 @@
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32939634" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="VcsContentAnnotationSettings">
@@ -315,9 +320,68 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#5214#5223#0" expanded="true" />
-            <element signature="e#15570#16620#0" expanded="true" />
-            <element signature="e#16619#16620#0" expanded="true" />
+            <element signature="imports" expanded="true" />
+            <element signature="e#5188#5197#0" expanded="true" />
+            <element signature="e#14552#15614#0" expanded="true" />
+            <element signature="e#15613#15614#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/me/drton/jmavsim/Simulator.java.backup">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4313">
+          <caret line="227" column="50" lean-forward="false" selection-start-line="227" selection-start-column="10" selection-end-line="227" selection-end-column="50" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/me/drton/jmavsim/MAVLinkHILSystem.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="817">
+          <caret line="43" column="33" lean-forward="false" selection-start-line="43" selection-start-column="33" selection-end-line="43" selection-end-column="33" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/me/drton/jmavsim/Simulator.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#5188#5197#0" expanded="true" />
+            <element signature="e#14552#15614#0" expanded="true" />
+            <element signature="e#15613#15614#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/me/drton/jmavsim/Simulator.java.backup">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4313">
+          <caret line="227" column="50" lean-forward="false" selection-start-line="227" selection-start-column="10" selection-end-line="227" selection-end-column="50" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/me/drton/jmavsim/MAVLinkHILSystem.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="646">
+          <caret line="43" column="33" lean-forward="false" selection-start-line="43" selection-start-column="33" selection-end-line="43" selection-end-column="33" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/me/drton/jmavsim/Simulator.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#5188#5197#0" expanded="true" />
+            <element signature="e#14552#15614#0" expanded="true" />
+            <element signature="e#15613#15614#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -327,9 +391,10 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#5214#5223#0" expanded="true" />
-            <element signature="e#15570#16620#0" expanded="true" />
-            <element signature="e#16619#16620#0" expanded="true" />
+            <element signature="imports" expanded="true" />
+            <element signature="e#5188#5197#0" expanded="true" />
+            <element signature="e#14552#15614#0" expanded="true" />
+            <element signature="e#15613#15614#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -376,10 +441,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-604">
           <caret line="93" column="0" lean-forward="false" selection-start-line="93" selection-start-column="0" selection-end-line="93" selection-end-column="0" />
-          <folding>
-            <element signature="e#2822#2823#0" expanded="false" />
-            <element signature="e#2862#2863#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -387,7 +448,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-29">
           <caret line="86" column="37" lean-forward="true" selection-start-line="86" selection-start-column="37" selection-end-line="86" selection-end-column="37" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -409,7 +469,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/me/drton/jmavsim/MAVLinkHILSystem.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="418">
+        <state relative-caret-position="646">
           <caret line="43" column="33" lean-forward="false" selection-start-line="43" selection-start-column="33" selection-end-line="43" selection-end-column="33" />
           <folding />
         </state>
@@ -417,8 +477,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/me/drton/jmavsim/Simulator.java.backup">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="494">
-          <caret line="227" column="50" lean-forward="false" selection-start-line="227" selection-start-column="10" selection-end-line="227" selection-end-column="50" />
+        <state relative-caret-position="504">
+          <caret line="271" column="0" lean-forward="false" selection-start-line="271" selection-start-column="0" selection-end-line="273" selection-end-column="39" />
           <folding />
         </state>
       </provider>
@@ -426,11 +486,12 @@
     <entry file="file://$PROJECT_DIR$/src/me/drton/jmavsim/Simulator.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="215">
-          <caret line="273" column="101" lean-forward="false" selection-start-line="273" selection-start-column="101" selection-end-line="273" selection-end-column="101" />
+          <caret line="188" column="58" lean-forward="false" selection-start-line="188" selection-start-column="58" selection-end-line="188" selection-end-column="58" />
           <folding>
-            <element signature="e#5214#5223#0" expanded="true" />
-            <element signature="e#15570#16620#0" expanded="true" />
-            <element signature="e#16619#16620#0" expanded="true" />
+            <element signature="imports" expanded="true" />
+            <element signature="e#5188#5197#0" expanded="true" />
+            <element signature="e#14552#15614#0" expanded="true" />
+            <element signature="e#15613#15614#0" expanded="true" />
           </folding>
         </state>
       </provider>
