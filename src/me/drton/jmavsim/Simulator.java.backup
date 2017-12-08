@@ -1,5 +1,6 @@
 package me.drton.jmavsim;
 
+import com.jogamp.openal.sound3d.Vec3f;
 import me.drton.jmavlib.geo.LatLonAlt;
 import me.drton.jmavlib.mavlink.MAVLinkSchema;
 import me.drton.jmavsim.Visualizer3D.ViewTypes;
@@ -59,7 +60,6 @@ public class Simulator implements Runnable {
     // Seattle downtown: 47.592182, -122.316031, 86m
     // Moscow downtown: 55.753395, 37.625427, 155m
     // Trumansburg: 42.5339037, -76.6452384, 287m
-    /* 这边修改了坐标，变成了HQU的 */
     public static LatLonAlt DEFAULT_ORIGIN_POS = new LatLonAlt(24.9360798D, 118.6404492D, 20.0D);   // 改成了华侨大学工学院的坐标 47.397742, 8.545594, 488
 
     // Mag inclination and declination in degrees. If both are left as zero, then DEFAULT_MAG_FIELD is used.
@@ -97,10 +97,10 @@ public class Simulator implements Runnable {
     private static boolean monitorMessage = false;
 
     private Visualizer3D visualizer;
-    private AbstractMulticopter vehicle, vehicle_2;                     /* 自增加 */
+    private AbstractMulticopter vehicle, vehicle_2;     // 自增加了一个新的飞机
     private CameraGimbal2D gimbal;
-    private MAVLinkHILSystem hilSystem, hilSystem_2;                    /* 自增加 */
-    private MAVLinkPort autopilotMavLinkPort, autopilotMavLinkPort_2;   /* 自增加 */
+    private MAVLinkHILSystem hilSystem, hilSystem_2;
+    private MAVLinkPort autopilotMavLinkPort, autopilotMavLinkPort_2;
     private UDPMavLinkPort udpGCMavLinkPort;
     private ScheduledFuture<?> thisHandle;
     private World world;
@@ -161,7 +161,7 @@ public class Simulator implements Runnable {
             shutdown = true;
         }
 
-        /* 自增加 */
+        // 增加一个Mavlink的数据集合
         MAVLinkSchema schema_2 = null;
         try {
             schema_2 = new MAVLinkSchema("mavlink/message_definitions/common.xml");
@@ -171,11 +171,13 @@ public class Simulator implements Runnable {
         }
 
         // Create MAVLink connections
-        MAVLinkConnection connHIL   = new MAVLinkConnection(world);
-        MAVLinkConnection connHIL_2 = new MAVLinkConnection(world);     /* 自增加 */
+        MAVLinkConnection connHIL = new MAVLinkConnection(world);
+        MAVLinkConnection connHIL_2 = new MAVLinkConnection(world);     // 自增加
         world.addObject(connHIL);
-        world.addObject(connHIL_2);                                     /* 自增加 */
+        world.addObject(connHIL_2);
+
         MAVLinkConnection connCommon = new MAVLinkConnection(world);
+        MAVLinkConnection connCommon_2 = new MAVLinkConnection(world);
         // Don't spam ground station with HIL messages
         if (schema != null) {
             connCommon.addSkipMessage(schema.getMessageDefinition("HIL_CONTROLS").id);
@@ -185,12 +187,25 @@ public class Simulator implements Runnable {
         }
         world.addObject(connCommon);
 
+        if (schema_2 != null) {
+            connCommon_2.addSkipMessage(schema_2.getMessageDefinition("HIL_CONTROLS").id);
+            connCommon_2.addSkipMessage(schema_2.getMessageDefinition("HIL_ACTUATOR_CONTROLS").id);
+            connCommon_2.addSkipMessage(schema_2.getMessageDefinition("HIL_SENSOR").id);
+            connCommon_2.addSkipMessage(schema_2.getMessageDefinition("HIL_GPS").id);
+        }
+        world.addObject(connCommon_2);
+
         // Create ports
         if (USE_SERIAL_PORT) {
             //Serial port: connection to autopilot over serial.
             SerialMAVLinkPort port = new SerialMAVLinkPort(schema);
             port.setup(serialPath, serialBaudRate, 8, 1, 0);
             autopilotMavLinkPort = port;
+
+            port = new SerialMAVLinkPort(schema_2);
+            port.setup(serialPath, serialBaudRate, 8, 1, 0);
+            autopilotMavLinkPort_2 = port;
+
         } else {
             UDPMavLinkPort port = new UDPMavLinkPort(schema);
             //port.setDebug(true);
@@ -199,17 +214,8 @@ public class Simulator implements Runnable {
             if (monitorMessage)
                 port.setMonitorMessageID(monitorMessageIds);
             autopilotMavLinkPort = port;
-        }
 
-        /*增加一个飞机的port */
-        if (USE_SERIAL_PORT) {
-            //Serial port: connection to autopilot over serial.
-            SerialMAVLinkPort port = new SerialMAVLinkPort(schema);
-            port.setup(serialPath, serialBaudRate, 8, 1, 0);
-            autopilotMavLinkPort_2 = port;
-        } else {
-            UDPMavLinkPort port = new UDPMavLinkPort(schema);
-            //port.setDebug(true);
+            port = new UDPMavLinkPort(schema_2);
             port.setup(autopilotIpAddress, autopilotPort + 1); // default source port 0 for autopilot, which is a client of JMAVSim
             // monitor certain mavlink messages.
             if (monitorMessage)
@@ -219,10 +225,14 @@ public class Simulator implements Runnable {
 
         // allow HIL and GCS to talk to this port
         connHIL.addNode(autopilotMavLinkPort);
-        connHIL_2.addNode(autopilotMavLinkPort_2);                       /* 增加 */
+/*        connHIL.addNode(autopilotMavLinkPort_2);                        // 增加 critical，加上这行就能双机工作，如果屏蔽其他而这个不屏蔽，则两架模拟的飞机读不到  */
+                                                                            // 那我们能应该可以理解单独打开jmavsim单独打开飞机的行为为HIL，而不是一定要接入硬件，飞机的数据可以由本机提供
+        connHIL_2.addNode(autopilotMavLinkPort_2);
         connCommon.addNode(autopilotMavLinkPort);
+        connCommon.addNode(autopilotMavLinkPort_2);                     // 增加
         // UDP port: connection to ground station
         udpGCMavLinkPort = new UDPMavLinkPort(schema);
+
         //udpGCMavLinkPort.setDebug(true);
         if (COMMUNICATE_WITH_QGC) {
             udpGCMavLinkPort.setup(qgcIpAddress, qgcPeerPort);
@@ -252,29 +262,30 @@ public class Simulator implements Runnable {
 
         // Create vehicle with sensors
         if (autopilotType == "aq") {
-            vehicle   = buildAQ_leora();
-            vehicle_2 = buildAQ_leora();        /* 增加新飞机 */
-        }
-        else {
-            vehicle   = buildMulticopter();
-            vehicle_2 = buildMulticopter();     /* 增加新飞机 */
-        }
+            vehicle = buildAQ_leora();
+            vehicle_2 = buildAQ_leora();
 
-        /* 新飞机要移动一下 */
-        Vector3d pos = vehicle_2.getPosition();
-        pos.x += 2.0f;
-        vehicle_2.setPosition(pos);
+        } else {
+            vehicle = buildMulticopter();
+            vehicle_2 = buildMulticopter();
+
+            Vector3d pos = vehicle_2.getPosition();
+            pos.x += 2.0f;
+            vehicle_2.setPosition(pos);
+        }
 
         // Create MAVLink HIL system
         // SysId should be the same as autopilot, ComponentId should be different!
-        hilSystem   = new MAVLinkHILSystem(schema,   autopilotSysId, 51, vehicle);
-        hilSystem_2 = new MAVLinkHILSystem(schema_2, autopilotSysId, 52, vehicle_2);      /* 增加新的仿真算法 */
+        hilSystem = new MAVLinkHILSystem(schema, autopilotSysId, 51, vehicle);
+        hilSystem_2 = new MAVLinkHILSystem(schema_2, autopilotSysId, 52, vehicle_2);        // 自增加
+
         //hilSystem.setHeartbeatInterval(0);
         connHIL.addNode(hilSystem);
-        connHIL_2.addNode(hilSystem_2);                                                              /* 增加新的仿真算法 */
+        connHIL.addNode(hilSystem_2);
+        connHIL_2.addNode(hilSystem);
 
         world.addObject(vehicle);
-        world.addObject(vehicle_2);                                                                  /* 增加新飞机 */
+        world.addObject(vehicle_2);
 
         // Put camera on vehicle with gimbal
         if (USE_GIMBAL) {
@@ -289,9 +300,9 @@ public class Simulator implements Runnable {
         visualizer.addWorldModels();
         visualizer.setHilSystem(hilSystem);
         visualizer.setVehicleViewObject(vehicle);
-        /* 增加的，但是设了不用 */
-        //visualizer.setHilSystem(hilSystem_2);
-        //visualizer.setVehicleViewObject(vehicle_2);
+        visualizer.setVehicleViewObject(vehicle_2);
+
+        Vector3d position_offset;
 
         // set default view and zoom mode
         visualizer.setViewType(GUI_START_VIEW);
@@ -307,7 +318,6 @@ public class Simulator implements Runnable {
             shutdown = true;
         }
 
-        /*自增加 */
         try {
             autopilotMavLinkPort_2.open();
         }
@@ -315,6 +325,7 @@ public class Simulator implements Runnable {
             System.out.println("ERROR: Failed to open MAV port: " + e.getLocalizedMessage());
             shutdown = true;
         }
+
 
         if (COMMUNICATE_WITH_QGC) {
             try {
@@ -340,9 +351,9 @@ public class Simulator implements Runnable {
                     // Close ports
                     if (autopilotMavLinkPort != null && autopilotMavLinkPort.isOpened())
                         autopilotMavLinkPort.close();
-                    /*自增加 */
+
                     if (autopilotMavLinkPort_2 != null && autopilotMavLinkPort_2.isOpened())
-                        autopilotMavLinkPort_2.close();
+                       autopilotMavLinkPort_2.close();
 
                     if (udpGCMavLinkPort != null && udpGCMavLinkPort.isOpened())
                         udpGCMavLinkPort.close();
@@ -370,7 +381,7 @@ public class Simulator implements Runnable {
     private AbstractMulticopter buildMulticopter() {
         Vector3d gc = new Vector3d(0.0, 0.0, 0.0);  // gravity center
         AbstractMulticopter vehicle = new Quadcopter(world, DEFAULT_VEHICLE_MODEL, "x", "default",
-                0.33 / 2, 4.0, 0.05, 0.005, gc);
+                                                        0.33 / 2, 4.0, 0.05, 0.005, gc);
         Matrix3d I = new Matrix3d();
         // Moments of inertia
         I.m00 = 0.005;  // X
@@ -514,7 +525,7 @@ public class Simulator implements Runnable {
     public final static String CMD_STRING = "java [-Xmx512m] -cp lib/*:out/production/jmavsim.jar me.drton.jmavsim.Simulator";
     public final static String CMD_STRING_JAR = "java [-Xmx512m] -jar jmavsim_run.jar";
     public final static String USAGE_STRING = CMD_STRING_JAR + " [-h] [" + UDP_STRING + " | " + SERIAL_STRING + "] [" + SPEED_STRING + "] [" + AP_STRING + "] [" + MAG_STRING + "] " +
-            "[" + QGC_STRING + "] [" + GIMBAL_STRING + "] [" + GUI_AA_STRING + "] [" + GUI_MAX_STRING + "] [" + GUI_VIEW_STRING + "] [" + REP_STRING + "] [" + PRINT_INDICATION_STRING + "]";
+                                              "[" + QGC_STRING + "] [" + GIMBAL_STRING + "] [" + GUI_AA_STRING + "] [" + GUI_MAX_STRING + "] [" + GUI_VIEW_STRING + "] [" + REP_STRING + "] [" + PRINT_INDICATION_STRING + "]";
 
     public static void main(String[] args)
             throws InterruptedException, IOException {
@@ -607,35 +618,35 @@ public class Simulator implements Runnable {
                     return;
                 }
             } else if (arg.equals("-qgc")) {
-                COMMUNICATE_WITH_QGC = true;
-                if (i == args.length) {
-                    // only arg is -qgc, so use default values.
-                    break;
-                }
-                if (i < args.length) {
-                    String nextArg = args[i++];
-                    if (nextArg.startsWith("-")) {
-                        // only turning on udp, but want to use default ports
-                        i--;
-                        continue;
-                    }
-                    try {
-                        // try to parse passed-in ports.
-                        String[] list = nextArg.split(":");
-                        if (list.length != 2) {
-                            System.err.println("Expected: " + QGC_STRING + ", got: " + Arrays.toString(list));
-                            return;
-                        }
-                        qgcIpAddress = list[0];
-                        qgcPeerPort = Integer.parseInt(list[1]);
-                    } catch (NumberFormatException e) {
-                        System.err.println("Expected: " + QGC_STRING + ", got: " + e.toString());
-                        return;
-                    }
-                } else {
-                    System.err.println("-qgc needs an argument: " + QGC_STRING);
-                    return;
-                }
+              COMMUNICATE_WITH_QGC = true;
+              if (i == args.length) {
+                  // only arg is -qgc, so use default values.
+                  break;
+              }
+              if (i < args.length) {
+                  String nextArg = args[i++];
+                  if (nextArg.startsWith("-")) {
+                      // only turning on udp, but want to use default ports
+                      i--;
+                      continue;
+                  }
+                  try {
+                      // try to parse passed-in ports.
+                      String[] list = nextArg.split(":");
+                      if (list.length != 2) {
+                          System.err.println("Expected: " + QGC_STRING + ", got: " + Arrays.toString(list));
+                          return;
+                      }
+                      qgcIpAddress = list[0];
+                      qgcPeerPort = Integer.parseInt(list[1]);
+                  } catch (NumberFormatException e) {
+                      System.err.println("Expected: " + QGC_STRING + ", got: " + e.toString());
+                      return;
+                  }
+              } else {
+                  System.err.println("-qgc needs an argument: " + QGC_STRING);
+                  return;
+              }
             } else if (arg.equals("-ap")) {
                 if (i < args.length) {
                     autopilotType = args[i++];
